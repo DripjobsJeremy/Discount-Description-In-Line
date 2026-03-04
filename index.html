@@ -121,7 +121,12 @@
     border-radius: 8px;
     margin: 4px 0 8px;
     padding: 9px 10px;
+    cursor: pointer;
+    transition: background 0.15s;
+    display: none; /* hidden until discount applied */
   }
+  .discount-row:hover { background: #dcfce7; }
+  .discount-row.visible { display: block; }
   .discount-top {
     display: flex;
     justify-content: space-between;
@@ -133,22 +138,32 @@
   .discount-tag-icon { font-size: 14px; }
   .discount-label { font-size: 14px; font-weight: 700; color: #15803d; }
   .discount-amount { font-size: 14px; font-weight: 700; color: #15803d; white-space: nowrap; }
-
-  /* Inline description — same size/color as the old hint text */
   .discount-description {
     font-size: 11px;
     color: #9ca3af;
     font-weight: 600;
     margin-top: 4px;
-    /* Clamp to exactly 2 lines */
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
     line-height: 1.45;
-    /* Wraps within the container — no explicit width needed */
     word-break: break-word;
   }
+
+  /* ── Apply Discount Button (below totals panel) ── */
+  .apply-discount-wrap {
+    padding: 10px 20px 16px;
+    display: flex;
+    justify-content: flex-end;
+  }
+  .apply-discount-btn {
+    background: #7C3AED; color: #fff; border: none; border-radius: 8px;
+    padding: 10px 20px; font-family: 'Nunito', sans-serif; font-size: 13px;
+    font-weight: 800; cursor: pointer; letter-spacing: 0.04em;
+    transition: background 0.15s;
+  }
+  .apply-discount-btn:hover { background: #6d28d9; }
 
   /* ── Totals Footer ── */
   .totals-footer {
@@ -188,6 +203,145 @@
     text-transform: uppercase; letter-spacing: 0.06em;
   }
   .annotation ul { padding-left: 18px; margin-top: 6px; display:flex; flex-direction:column; gap:3px; }
+
+  /* ══════════════════════════════════════
+     MODAL
+  ══════════════════════════════════════ */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.45);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 1000;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  .modal-overlay.open {
+    opacity: 1; pointer-events: all;
+  }
+  .modal {
+    background: #fff;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 420px;
+    margin: 16px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    transform: translateY(12px);
+    transition: transform 0.2s;
+    overflow: hidden;
+  }
+  .modal-overlay.open .modal {
+    transform: translateY(0);
+  }
+
+  /* Modal header */
+  .modal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 20px 14px;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  .modal-title {
+    font-size: 17px; font-weight: 800; color: #1e1b2e;
+  }
+  .modal-close {
+    background: none; border: none; cursor: pointer;
+    font-size: 20px; color: #9ca3af; line-height: 1;
+    padding: 2px 6px; border-radius: 6px;
+    transition: background 0.15s;
+  }
+  .modal-close:hover { background: #f3f4f6; color: #374151; }
+
+  /* Modal body */
+  .modal-body { padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+
+  .modal-field { display: flex; flex-direction: column; gap: 6px; }
+  .modal-field label {
+    font-size: 13px; font-weight: 700; color: #374151;
+  }
+
+  /* Job total row */
+  .job-total-row {
+    display: flex; justify-content: space-between; align-items: center;
+    background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px;
+    padding: 10px 14px; font-size: 14px;
+  }
+  .job-total-row .jt-label { font-weight: 600; color: #6b7280; }
+  .job-total-row .jt-value { font-weight: 800; color: #111827; font-size: 16px; }
+
+  /* Quick discount pills */
+  .quick-pills { display: flex; gap: 8px; }
+  .quick-pill {
+    flex: 1; background: #f3f4f6; border: 1.5px solid #e5e7eb;
+    border-radius: 8px; padding: 9px 0; font-family: 'Nunito', sans-serif;
+    font-size: 13px; font-weight: 800; color: #374151; cursor: pointer;
+    text-align: center; transition: all 0.15s;
+  }
+  .quick-pill:hover { background: #ede9fe; border-color: #c4b5fd; color: #7C3AED; }
+  .quick-pill.active { background: #7C3AED; border-color: #7C3AED; color: #fff; }
+
+  /* Input row (% and $) */
+  .input-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .input-wrap {
+    display: flex; align-items: center;
+    border: 1.5px solid #e5e7eb; border-radius: 8px;
+    overflow: hidden; background: #fff;
+    transition: border-color 0.15s;
+  }
+  .input-wrap:focus-within { border-color: #7C3AED; }
+  .input-prefix, .input-suffix {
+    background: #f9fafb; padding: 0 10px;
+    font-size: 13px; font-weight: 700; color: #6b7280;
+    height: 40px; display: flex; align-items: center;
+    border-right: 1px solid #e5e7eb; flex-shrink: 0;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  .input-suffix { border-right: none; border-left: 1px solid #e5e7eb; }
+  .input-wrap input {
+    flex: 1; border: none; outline: none; padding: 0 10px;
+    font-family: 'Nunito', sans-serif; font-size: 14px; font-weight: 700;
+    color: #111827; height: 40px; background: transparent; min-width: 0;
+  }
+
+  /* Name & Note inputs */
+  .text-input {
+    border: 1.5px solid #e5e7eb; border-radius: 8px; padding: 10px 12px;
+    font-family: 'Nunito', sans-serif; font-size: 14px; font-weight: 600;
+    color: #111827; outline: none; width: 100%;
+    transition: border-color 0.15s;
+  }
+  .text-input:focus { border-color: #7C3AED; }
+  textarea.text-input { resize: vertical; min-height: 80px; line-height: 1.5; }
+
+  /* char counter */
+  .char-counter {
+    font-size: 11px; color: #9ca3af; font-weight: 600;
+    text-align: right; margin-top: 2px;
+  }
+  .char-counter.warn { color: #f59e0b; }
+  .char-counter.over { color: #ef4444; }
+  .label-hint { font-weight: 600; color: #9ca3af; }
+
+  /* Modal footer */
+  .modal-footer {
+    padding: 14px 20px;
+    border-top: 1px solid #f0f0f0;
+    display: flex; justify-content: flex-end; gap: 10px;
+  }
+  .btn-close-modal {
+    background: none; border: 1.5px solid #e5e7eb; border-radius: 8px;
+    padding: 10px 22px; font-family: 'Nunito', sans-serif; font-size: 14px;
+    font-weight: 700; color: #374151; cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn-close-modal:hover { background: #f3f4f6; }
+  .btn-save {
+    background: #7C3AED; border: none; border-radius: 8px;
+    padding: 10px 28px; font-family: 'Nunito', sans-serif; font-size: 14px;
+    font-weight: 800; color: #fff; cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn-save:hover { background: #6d28d9; }
+  .btn-save:disabled { background: #c4b5fd; cursor: not-allowed; }
 </style>
 </head>
 <body>
@@ -225,20 +379,19 @@
 
       <div class="totals-row">
         <span class="label">Line Items</span>
-        <span class="amount">$2,550.00</span>
+        <span class="amount" id="line-items-amount">$2,550.00</span>
       </div>
 
-      <!-- ── INLINE DISCOUNT ROW ── -->
-      <div class="discount-row">
+      <!-- ── INLINE DISCOUNT ROW (hidden until applied) ── -->
+      <div class="discount-row" id="discount-row" onclick="openModal()">
         <div class="discount-top">
           <div class="discount-label-group">
             <span class="discount-tag-icon">🏷️</span>
-            <span class="discount-label">Sales Discount</span>
+            <span class="discount-label" id="display-name">Sales Discount</span>
           </div>
-          <span class="discount-amount">($255.00)</span>
+          <span class="discount-amount" id="display-amount">($0.00)</span>
         </div>
-        <!-- Inline description — 2-line max, wraps within container -->
-        <div class="discount-description">Repeat customer loyalty discount — thank you for choosing us again! 10% off your total project.</div>
+        <div class="discount-description" id="display-note"></div>
       </div>
 
       <div class="totals-row">
@@ -249,15 +402,20 @@
       <div class="totals-footer">
         <div>
           <div class="proj-label">Project Total</div>
-          <div class="proj-amount">$2,295.00</div>
+          <div class="proj-amount" id="proj-total">$2,550.00</div>
         </div>
         <div class="balance-block">
           <div class="balance-label">Balance at Completion</div>
-          <div class="balance-amount">$2,295.00</div>
+          <div class="balance-amount" id="balance-total">$2,550.00</div>
         </div>
       </div>
 
     </div>
+  </div>
+
+  <!-- Apply Discount button -->
+  <div class="apply-discount-wrap">
+    <button type="button" class="apply-discount-btn" onclick="openModal()">Apply Discount</button>
   </div>
 
   <div class="stats-bar">
@@ -284,6 +442,75 @@
 
 </div>
 
+<!-- ══ APPLY DISCOUNT MODAL ══ -->
+<div class="modal-overlay" id="modal-overlay" onclick="handleOverlayClick(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Apply Discount</span>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- Job Total -->
+      <div class="job-total-row">
+        <span class="jt-label">Job Total</span>
+        <span class="jt-value" id="modal-job-total">$2,550.00</span>
+      </div>
+
+      <!-- Quick Discount -->
+      <div class="modal-field">
+        <label>Quick Discount</label>
+        <div class="quick-pills">
+          <button type="button" class="quick-pill" onclick="applyQuick(5, this)">5%</button>
+          <button type="button" class="quick-pill" onclick="applyQuick(10, this)">10%</button>
+          <button type="button" class="quick-pill" onclick="applyQuick(15, this)">15%</button>
+          <button type="button" class="quick-pill" onclick="applyQuick(20, this)">20%</button>
+        </div>
+      </div>
+
+      <!-- Discount % and Amount $ -->
+      <div class="input-pair">
+        <div class="modal-field">
+          <label>Discount</label>
+          <div class="input-wrap">
+            <input type="number" id="input-pct" min="0" max="100" step="0.01"
+              placeholder="0" oninput="onPctChange(this.value)" />
+            <span class="input-suffix">%</span>
+          </div>
+        </div>
+        <div class="modal-field">
+          <label>Amount</label>
+          <div class="input-wrap">
+            <span class="input-prefix">$</span>
+            <input type="number" id="input-amt" min="0" step="0.01"
+              placeholder="0.00" oninput="onAmtChange(this.value)" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Name -->
+      <div class="modal-field">
+        <label>Name</label>
+        <input type="text" class="text-input" id="input-name" value="Sales Discount" placeholder="Discount name" />
+      </div>
+
+      <!-- Note -->
+      <div class="modal-field">
+        <label>Note <span class="label-hint">(shown to customer)</span></label>
+        <textarea class="text-input" id="input-note" maxlength="120"
+          placeholder="e.g. Repeat customer loyalty discount — 10% off your total project."
+          oninput="updateCharCount(this)"></textarea>
+        <div class="char-counter" id="char-counter">0 / 120</div>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn-close-modal" onclick="closeModal()">Close</button>
+      <button class="btn-save" id="btn-save" onclick="saveDiscount()">Save</button>
+    </div>
+  </div>
+</div>
+
 <div class="annotation">
   <strong>📋 Dev Annotation — Inline Discount Description</strong>
   <ul>
@@ -294,8 +521,100 @@
     <li><strong>Empty state:</strong> If no description is entered, the <code>.discount-description</code> element is not rendered — no extra padding or empty line appears.</li>
     <li><strong>Applies to:</strong> Both flat-dollar and percentage discount types.</li>
     <li><strong>PDF:</strong> Print description as a second line beneath the discount label in generated PDFs.</li>
+    <li><strong>Edit flow:</strong> Clicking the green discount row re-opens the Apply Discount modal pre-filled with current values.</li>
   </ul>
 </div>
+
+<script>
+  const LINE_ITEMS = 2550.00;
+  let state = { pct: 0, amt: 0, name: 'Sales Discount', note: '' };
+
+  function fmt(n) {
+    return '$' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  }
+
+  function openModal() {
+    // pre-fill from current state
+    document.getElementById('input-pct').value = state.pct > 0 ? state.pct : '';
+    document.getElementById('input-amt').value = state.amt > 0 ? state.amt.toFixed(2) : '';
+    document.getElementById('input-name').value = state.name;
+    document.getElementById('input-note').value = state.note;
+    updateCharCount(document.getElementById('input-note'));
+    syncQuickPills(state.pct);
+    document.getElementById('modal-overlay').classList.add('open');
+  }
+
+  function closeModal() {
+    document.getElementById('modal-overlay').classList.remove('open');
+  }
+
+  function handleOverlayClick(e) {
+    if (e.target === document.getElementById('modal-overlay')) closeModal();
+  }
+
+  function applyQuick(pct, btn) {
+    document.querySelectorAll('.quick-pill').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    const amt = (LINE_ITEMS * pct / 100);
+    document.getElementById('input-pct').value = pct;
+    document.getElementById('input-amt').value = amt.toFixed(2);
+  }
+
+  function syncQuickPills(pct) {
+    document.querySelectorAll('.quick-pill').forEach(p => {
+      p.classList.toggle('active', parseFloat(p.textContent) === pct);
+    });
+  }
+
+  function onPctChange(val) {
+    const pct = Math.min(parseFloat(val) || 0, 100);
+    const amt = LINE_ITEMS * pct / 100;
+    document.getElementById('input-amt').value = pct > 0 ? amt.toFixed(2) : '';
+    syncQuickPills(pct);
+  }
+
+  function onAmtChange(val) {
+    const amt = Math.min(parseFloat(val) || 0, LINE_ITEMS);
+    const pct = LINE_ITEMS > 0 ? (amt / LINE_ITEMS) * 100 : 0;
+    document.getElementById('input-pct').value = amt > 0 ? parseFloat(pct.toFixed(4)) : '';
+    syncQuickPills(parseFloat(pct.toFixed(2)));
+  }
+
+  function updateCharCount(el) {
+    const len = el.value.length;
+    const counter = document.getElementById('char-counter');
+    counter.textContent = len + ' / 120';
+    counter.className = 'char-counter' + (len > 110 ? (len >= 120 ? ' over' : ' warn') : '');
+  }
+
+  function saveDiscount() {
+    const pct = parseFloat(document.getElementById('input-pct').value) || 0;
+    const amt = parseFloat(document.getElementById('input-amt').value) || 0;
+    const name = document.getElementById('input-name').value.trim() || 'Sales Discount';
+    const note = document.getElementById('input-note').value.trim();
+
+    state = { pct, amt, name, note };
+
+    const discountRow = document.getElementById('discount-row');
+    const noteEl = document.getElementById('display-note');
+
+    if (amt > 0) {
+      document.getElementById('display-name').textContent = name;
+      document.getElementById('display-amount').textContent = '(' + fmt(amt) + ')';
+      noteEl.textContent = note;
+      noteEl.style.display = note ? '' : 'none';
+      discountRow.classList.add('visible');
+    } else {
+      discountRow.classList.remove('visible');
+    }
+
+    const total = Math.max(LINE_ITEMS - amt, 0);
+    document.getElementById('proj-total').textContent = fmt(total);
+    document.getElementById('balance-total').textContent = fmt(total);
+
+    closeModal();
+  }
+</script>
 
 </body>
 </html>
